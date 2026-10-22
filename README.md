@@ -1,48 +1,48 @@
 # audit-defensiva
 
-Auditoría **defensiva** del host local en **Linux** y **Windows**.
+Aplicación de auditoría **defensiva** local: **host**, **LAN/Wi‑Fi** y **Bluetooth** (Linux y Windows).
 
-Revisa superficie de ataque de **tu propio equipo**: firewall, actualizaciones, puertos en escucha, RDP/SSH, antivirus, usuarios y endurecimiento básico. **No** explota vulnerabilidades ni escanea otros hosts de la red.
+No explota vulnerabilidades ni escanea puertos de otros equipos.
 
-## Manual completo
-
-Instrucciones paso a paso (clonar, PowerShell, informes): **[MANUAL.md](MANUAL.md)**.
-
-## Uso rápido
-
-### Linux
+## Instalación en Linux (Omarchy)
 
 ```bash
-chmod +x bin/audit-host.sh
-./bin/audit-host.sh --json
+cd ~/Dv/audit-defensiva   # o donde clones el repo
+./install.sh
 ```
 
-### Windows (en el propio PC Windows)
+Queda en:
 
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\bin\audit-host.ps1 -Json
+| Qué | Dónde |
+|-----|--------|
+| App / datos | `~/.local/share/audit-defensiva` |
+| Comando | `~/.local/bin/audit-defensiva` |
+| Menú | «Audit Defensiva» |
+
+```bash
+audit-defensiva          # menú
+audit-defensiva all      # host + lan + bluetooth
+audit-defensiva lan
+audit-defensiva bluetooth
 ```
 
-Informes en `reports/`.
+## Manual
 
-| Código de salida | Significado      |
-|------------------|------------------|
-| 0                | Sin FAIL ni WARN |
-| 1                | Solo WARN        |
-| 2                | Hay FAIL         |
+Paso a paso: **[MANUAL.md](MANUAL.md)**.
 
 ## Scripts
 
-| Archivo              | Plataforma |
-|----------------------|------------|
-| `bin/audit-host.sh`  | Linux      |
-| `bin/audit-host.ps1` | Windows    |
+| Archivo | Qué hace |
+|---------|----------|
+| `bin/audit-defensiva` | App / menú |
+| `bin/audit-host.sh` / `.ps1` | Sistema |
+| `bin/audit-lan.sh` / `.ps1` | LAN / Wi‑Fi (pasivo) |
+| `bin/audit-bluetooth.sh` / `.ps1` | Bluetooth local |
 
-## Alcance y ética
+## Ética
 
-Ejecuta el script **en la máquina que administras**. No sirve (ni está pensado) para atacar o escanear otros equipos por Wi‑Fi.
+Ejecuta solo en máquinas que administras. LAN/Bluetooth aquí = **tu** adaptador y vista pasiva de vecinos, no ataques a la red.
 
 ## Licencia
 
-MIT — ver [LICENSE](LICENSE).
+MIT — [LICENSE](LICENSE).

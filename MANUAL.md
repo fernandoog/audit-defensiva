@@ -1,147 +1,125 @@
-# Manual de uso — audit-defensiva
+# Manual — audit-defensiva
 
-Guía para lanzar la auditoría **en el propio equipo** que quieres revisar (Linux o Windows).  
-No se audita un PC remoto por Wi‑Fi: clona o copia el proyecto **en esa máquina** y ejecuta el script allí.
+Auditoría defensiva del **propio** equipo: host, LAN/Wi‑Fi y Bluetooth.  
+No escanea ni ataca otros dispositivos de la red.
 
-## 1. Obtener el proyecto
+## Linux: instalar como aplicación
 
-En el equipo a auditar:
+Desde el clon del repo:
 
 ```bash
 git clone https://github.com/fernandoog/audit-defensiva.git
 cd audit-defensiva
+./install.sh
 ```
 
-Sin git: descarga el ZIP desde GitHub → **Code → Download ZIP**, descomprime y entra en la carpeta.
+Esto copia el proyecto a `~/.local/share/audit-defensiva`, pone `audit-defensiva` en `~/.local/bin` y registra «Audit Defensiva» en el menú de aplicaciones.
+
+### Abrir la app
+
+- Launcher / menú → **Audit Defensiva**
+- O en terminal:
+
+```bash
+audit-defensiva
+```
+
+Menú: `1` Host · `2` LAN · `3` Bluetooth · `4` Todo · `0` Salir.
+
+Sin menú:
+
+```bash
+audit-defensiva host --json
+audit-defensiva lan --json
+audit-defensiva bluetooth --json
+audit-defensiva all
+```
+
+Informes en `~/.local/share/audit-defensiva/reports/` (si instalaste) o `./reports/` (si lanzas desde el repo).
+
+### Actualizar
+
+```bash
+cd ~/Dv/audit-defensiva   # repo
+git pull
+./install.sh
+```
 
 ---
 
-## 2. Linux (Omarchy / Arch / similares)
+## Módulo Host
 
-```bash
-chmod +x bin/audit-host.sh
-./bin/audit-host.sh
-```
-
-Con JSON:
+Sistema, actualizaciones, firewall, puertos locales, SSH, usuarios, sysctl.
 
 ```bash
 ./bin/audit-host.sh --json
 ```
 
-Informe en `reports/audit-<nombre>-<fecha>.txt`.
+---
 
-Algunas comprobaciones (firewall completo, `/etc/shadow`) mejoran con:
+## Módulo LAN (defensivo)
+
+- Interfaces y direcciones
+- Wi‑Fi (SSID, tipo de cifrado WPA2/WPA3)
+- IP forwarding
+- Vecinos en tabla ARP/NDP (**solo caché local**, sin port-scan)
+- Comparticiones NFS/Samba de **este** host
+- Firewall
 
 ```bash
-sudo ./bin/audit-host.sh --json
+./bin/audit-lan.sh --json
+# o
+audit-defensiva lan
 ```
 
 ---
 
-## 3. Windows (tu portátil)
+## Módulo Bluetooth (defensivo)
 
-Hazlo **sentado en el Windows**, no desde otro PC de la red.
+- Powered / Discoverable / Pairable
+- Dispositivos conocidos
+- rfkill
 
-### 3.1 Abrir PowerShell
-
-1. Tecla Windows → escribe `PowerShell`.
-2. Clic derecho → **Ejecutar como administrador** (recomendado para BitLocker, SMBv1 y Defender completos).
-3. Ve a la carpeta del proyecto:
-
-```powershell
-cd $HOME\Downloads\audit-defensiva
-# o la ruta donde clonaste / descomprimiste
+```bash
+./bin/audit-bluetooth.sh --json
+# o
+audit-defensiva bluetooth
 ```
 
-### 3.2 Política de ejecución (solo si Windows bloquea el script)
+Consejo: si no usas BT, apágalo. Si lo usas, `Discoverable=no` y `Pairable=no` salvo al emparejar.
+
+---
+
+## Windows
+
+Clona o descarga el ZIP **en el PC Windows** y en PowerShell (admin recomendado):
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
-
-Eso solo afecta a **esa** ventana de PowerShell.
-
-### 3.3 Lanzar la auditoría
-
-```powershell
-.\bin\audit-host.ps1
-```
-
-Con JSON:
-
-```powershell
 .\bin\audit-host.ps1 -Json
+.\bin\audit-lan.ps1 -Json
+.\bin\audit-bluetooth.ps1 -Json
 ```
 
-Otro directorio de informes:
-
-```powershell
-.\bin\audit-host.ps1 -Json -OutDir $env:USERPROFILE\Desktop\informes-audit
-```
-
-### 3.4 Dónde está el informe
-
-Carpeta `reports\` dentro del proyecto (o la de `-OutDir`):
-
-- `audit-<NOMBRE-PC>-<timestamp>.txt`
-- `audit-<NOMBRE-PC>-<timestamp>.json` (si usaste `-Json`)
+No lances estos scripts «contra» el Windows desde otro PC por Wi‑Fi: ejecútalos **en** el Windows.
 
 ---
 
-## 4. Cómo leer el resultado
+## Cómo leer resultados
 
 | Etiqueta | Significado |
 |----------|-------------|
-| PASS | Bien según la comprobación |
-| WARN | Revisar / endurecer |
-| FAIL | Prioritario corregir |
-| INFO | Contexto, no es un fallo |
+| PASS | Correcto |
+| WARN | Revisar |
+| FAIL | Prioritario |
+| INFO | Contexto |
 
-Códigos de salida del proceso:
-
-| Código | Significado |
-|--------|-------------|
-| 0 | Sin FAIL ni WARN |
-| 1 | Solo WARN |
-| 2 | Hay FAIL |
+Salida: `0` ok · `1` solo WARN · `2` hay FAIL.
 
 ---
 
-## 5. Qué mirar primero en Windows
+## Qué no hace
 
-1. Perfiles de **Firewall** desactivados → actívalos.
-2. **Actualizaciones** pendientes → Windows Update.
-3. **RDP** abierto sin necesidad → desactívalo o exige NLA.
-4. **Defender** con RTP off o firmas viejas → corrige antes de seguir.
-5. **SMBv1** habilitado → desinstala la característica.
-6. Cuenta **Guest** habilitada → deshabilítala.
-7. Puertos sensibles en `0.0.0.0` (445, 3389, …) → reduce exposición.
-
-En Linux: UFW/nft, actualizaciones, SSH (`PermitRootLogin`, contraseñas) y binds en `0.0.0.0`.
-
----
-
-## 6. Qué no hace este proyecto
-
-- No usa Metasploit ni exploits.
-- No escanea otros equipos de la Wi‑Fi.
-- No sustituye un pentest profesional ni antivirus completo.
-
-Solo ayuda a **ver y endurecer la superficie** del host donde lo ejecutas.
-
----
-
-## 7. Problemas frecuentes
-
-**Windows: “no se puede cargar porque la ejecución de scripts está deshabilitada”**  
-→ `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` y vuelve a lanzar.
-
-**Windows: poco detalle en BitLocker / SMBv1**  
-→ abre PowerShell **como administrador**.
-
-**Linux: UFW “sin salida”**  
-→ prueba con `sudo ./bin/audit-host.sh`.
-
-**¿Auditar el Windows estando en el Linux de la misma Wi‑Fi?**  
-→ no con este tool. Copia el repo al Windows (USB, git clone, ZIP) y ejecuta `audit-host.ps1` allí.
+- Metasploit / exploits
+- Escaneo de puertos de otros hosts
+- Ataques Bluetooth a terceros

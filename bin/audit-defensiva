@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# audit-defensiva — aplicación TUI de auditoría defensiva local
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Si está instalado como symlink en ~/.local/bin, ROOT puede ser share/
+if [[ ! -x "$SCRIPT_DIR/audit-host.sh" && -x "$ROOT_DIR/bin/audit-host.sh" ]]; then
+  SCRIPT_DIR="$ROOT_DIR/bin"
+fi
+# Instalación en ~/.local/share/audit-defensiva
+if [[ ! -x "$SCRIPT_DIR/audit-host.sh" ]]; then
+  SHARE="${XDG_DATA_HOME:-$HOME/.local/share}/audit-defensiva"
+  if [[ -x "$SHARE/bin/audit-host.sh" ]]; then
+    SCRIPT_DIR="$SHARE/bin"
+    ROOT_DIR="$SHARE"
+  fi
+fi
+
+VERSION="1.1.0"
+OUT_DIR="${ROOT_DIR}/reports"
+mkdir -p "$OUT_DIR"
+
+run_mod() {
+  local script="$1"
+  shift
+  if [[ ! -x "$SCRIPT_DIR/$script" ]]; then
+    echo "No encontrado: $SCRIPT_DIR/$script" >&2
+    return 127
+  fi
+  echo
+  echo "──────── $script ────────"
+  set +e
+  "$SCRIPT_DIR/$script" --json --out "$OUT_DIR" "$@"
+  local ec=$?
+  set -e
+  echo "Código de salida: $ec"
+  return 0
+}
+
+pause() {
+  echo
+  read -r -p "Enter para continuar… " _
+}
+
+menu() {
+  clear 2>/dev/null || true
+  cat <<EOF
+╔══════════════════════════════════════════╗
+║     audit-defensiva  v${VERSION}              ║
+║     Auditoría local (sin explotación)    ║
+╚══════════════════════════════════════════╝
+
+  Informes → ${OUT_DIR}
+
+  1) Host      (sistema, firewall, SSH, sysctl…)
+  2) LAN       (Wi‑Fi, interfaces, vecinos ARP, shares)
+  3) Bluetooth (adaptador, discoverable, emparejados)
+  4) Todo      (1 + 2 + 3)
+  5) Abrir carpeta de informes
+  0) Salir
+
+EOF
+  read -r -p "Elige [0-5]: " choice
+  case "${choice}" in
+    1) run_mod audit-host.sh; pause ;;
+    2) run_mod audit-lan.sh; pause ;;
+    3) run_mod audit-bluetooth.sh; pause ;;
+    4)
+      run_mod audit-host.sh
+      run_mod audit-lan.sh
+      run_mod audit-bluetooth.sh
+      pause
+      ;;
+    5)
+      if command -v xdg-open >/dev/null; then
+        xdg-open "$OUT_DIR" >/dev/null 2>&1 || true
+      fi
+      echo "Informes en: $OUT_DIR"
+      pause
+      ;;
+    0|q|Q) echo "Hasta luego."; exit 0 ;;
+    *) echo "Opción no válida"; sleep 1 ;;
+  esac
+}
+
+# Modo no interactivo: audit-defensiva host|lan|bluetooth|all [--json]
+if [[ $# -gt 0 ]]; then
+  case "$1" in
+    host) shift; exec "$SCRIPT_DIR/audit-host.sh" "$@" ;;
+    lan) shift; exec "$SCRIPT_DIR/audit-lan.sh" "$@" ;;
+    bluetooth|bt) shift; exec "$SCRIPT_DIR/audit-bluetooth.sh" "$@" ;;
+    all)
+      shift
+      run_mod audit-host.sh "$@"
+      run_mod audit-lan.sh "$@"
+      run_mod audit-bluetooth.sh "$@"
+      exit 0
+      ;;
+    -h|--help)
+      echo "Uso: audit-defensiva [host|lan|bluetooth|all] [args…]"
+      echo "     audit-defensiva          # menú interactivo"
+      exit 0
+      ;;
+    *)
+      echo "Subcomando desconocido: $1" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+while true; do
+  menu
+done

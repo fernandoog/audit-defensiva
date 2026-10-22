@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Audit Defensiva
+Comment=Auditoría defensiva local: host, LAN y Bluetooth
+Exec=xdg-terminal-exec --app-id=audit.defensiva -e audit-defensiva
+Icon=audit-defensiva
+Terminal=false
+Categories=System;Security;
+Keywords=security;audit;firewall;bluetooth;wifi;
+StartupNotify=true
