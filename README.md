@@ -1,60 +1,47 @@
 # audit-defensiva
 
-Auditoría **defensiva** del host local en Linux (Omarchy/Arch y similares).
+Auditoría **defensiva** del host local en **Linux** y **Windows**.
 
-Revisa superficie de ataque de **tu propio equipo**: actualizaciones, firewall, puertos en escucha, SSH, usuarios, permisos del home y sysctl. **No** explota vulnerabilidades ni escanea otros hosts.
+Revisa superficie de ataque de **tu propio equipo**: firewall, actualizaciones, puertos en escucha, RDP/SSH, antivirus, usuarios y endurecimiento básico. **No** explota vulnerabilidades ni escanea otros hosts de la red.
 
-## Requisitos
+## Manual completo
 
-- Bash 4+
-- Herramientas habituales: `ss`, `sysctl`, `systemctl`
-- Opcionales: `ufw`, `nft`, `checkupdates` (Arch), `lynis`, `nmap`
+Instrucciones paso a paso (clonar, PowerShell, informes): **[MANUAL.md](MANUAL.md)**.
 
-## Uso
+## Uso rápido
+
+### Linux
 
 ```bash
 chmod +x bin/audit-host.sh
-./bin/audit-host.sh
-```
-
-Informe en `reports/audit-<host>-<timestamp>.txt`.
-
-```bash
 ./bin/audit-host.sh --json
-./bin/audit-host.sh --out /tmp/mis-informes
 ```
 
-Códigos de salida:
+### Windows (en el propio PC Windows)
 
-| Código | Significado        |
-|--------|--------------------|
-| 0      | Sin FAIL ni WARN   |
-| 1      | Solo WARN          |
-| 2      | Hay FAIL           |
-
-## Qué comprueba
-
-- Identidad del host y privilegios del proceso
-- Paquetes pendientes (`checkupdates` en Arch)
-- Estado de UFW / reglas nftables
-- Sockets TCP/UDP en escucha (`ss`) y binds sensibles en `0.0.0.0`
-- `PermitRootLogin` / `PasswordAuthentication` en SSH
-- Cuentas UID 0 y (si hay permiso) contraseñas vacías
-- Permisos de `$HOME`, `.ssh` y `.gnupg`
-- Sysctl de endurecimiento habitual
-
-## Ampliación opcional
-
-Si instalas [Lynis](https://cisofy.com/lynis/):
-
-```bash
-sudo pacman -S lynis
-sudo lynis audit system
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\bin\audit-host.ps1 -Json
 ```
+
+Informes en `reports/`.
+
+| Código de salida | Significado      |
+|------------------|------------------|
+| 0                | Sin FAIL ni WARN |
+| 1                | Solo WARN        |
+| 2                | Hay FAIL         |
+
+## Scripts
+
+| Archivo              | Plataforma |
+|----------------------|------------|
+| `bin/audit-host.sh`  | Linux      |
+| `bin/audit-host.ps1` | Windows    |
 
 ## Alcance y ética
 
-Este proyecto es para **auditar y endurecer máquinas que administras**. No uses estas ideas para atacar sistemas ajenos.
+Ejecuta el script **en la máquina que administras**. No sirve (ni está pensado) para atacar o escanear otros equipos por Wi‑Fi.
 
 ## Licencia
 
